@@ -1,0 +1,123 @@
+{
+    "media": [
+        {
+            "defName": "ICON_WIND",
+            "type": "png",
+            "file": "images/wind.png"
+        },
+        {
+            "defName": "ICON_ERROR",
+            "type": "png",
+            "file": "images/error.png"
+        },
+        {
+            "defName": "ICON_PARTLY_CLOUDY_NIGHT",
+            "type": "png",
+            "file": "images/partly-cloudy-night.png"
+        },
+        {
+            "defName": "ICON_PARTLY_CLOUDY_DAY",
+            "type": "png",
+            "file": "images/partly-cloudy-day.png"
+        },
+        {
+            "defName": "ICON_CLOUDY",
+            "type": "png",
+            "file": "images/cloudy.png"
+        },
+        {
+            "defName": "ICON_FOG",
+            "type": "png",
+            "file": "images/fog.png"
+        },
+        {
+            "defName": "ICON_SLEET",
+            "type": "png",
+            "file": "images/sleet.png"
+        },
+        {
+            "defName": "ICON_SNOW",
+            "type": "png",
+            "file": "images/snow.png"
+        },
+        {
+            "defName": "ICON_RAIN",
+            "type": "png",
+            "file": "images/rain.png"
+        },
+        {
+            "defName": "ICON_CLEAR_NIGHT",
+            "type": "png",
+            "file": "images/clear-night.png"
+        },
+        {
+            "defName": "ICON_CLEAR_DAY",
+            "type": "png",
+            "file": "images/clear-day.png"
+        },
+        {
+            "defName": "TIME_COLON",
+            "type": "png",
+            "file": "images/colon.png"
+        },
+        {
+            "defName": "TIME_DIGIT_NINE",
+            "type": "png",
+            "file": "images/9.png"
+        },
+        {
+            "defName": "TIME_DIGIT_EIGHT",
+            "type": "png",
+            "file": "images/8.png"
+        },
+        {
+            "defName": "TIME_DIGIT_SEVEN",
+            "type": "png",
+            "file": "images/7.png"
+        },
+        {
+            "defName": "TIME_DIGIT_SIX",
+            "type": "png",
+            "file": "images/6.png"
+        },
+        {
+            "defName": "TIME_DIGIT_FIVE",
+            "type": "png",
+            "file": "images/5.png"
+        },
+        {
+            "defName": "TIME_DIGIT_FOUR",
+            "type": "png",
+            "file": "images/4.png"
+        },
+        {
+            "defName": "TIME_DIGIT_THREE",
+            "type": "png",
+            "file": "images/3.png"
+        },
+        {
+            "defName": "TIME_DIGIT_TWO",
+            "type": "png",
+            "file": "images/2.png"
+        },
+        {
+            "defName": "TIME_DIGIT_ONE",
+            "type": "png",
+            "file": "images/1.png"
+        },
+        {
+            "defName": "TIME_DIGIT_ZERO",
+            "type": "png",
+            "file": "images/0.png"
+        },
+        {
+            "trackingAdjust": -4,
+            "characterRegex": "[0-9:\u00b0-]",
+            "defName": "FUTURA_40",
+            "type": "font",
+            "file": "fonts/futura.ttf"
+        }
+    ],
+    "friendlyVersion": "VERSION",
+    "versionDefName": "APP_RESOURCES"
+}
