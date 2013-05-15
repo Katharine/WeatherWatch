@@ -29,7 +29,8 @@ static Window window;
 static TimeLayer time_layer;
 static WeatherLayer weather_layer;
 
-void request_weather(AppContextRef app_ctx, AppTimerHandle handle, uint32_t cookie);
+void request_weather();
+void handle_timer(AppContextRef app_ctx, AppTimerHandle handle, uint32_t cookie);
 
 void failed(int32_t cookie, int http_status, void* context) {
 	if(cookie == 0 || cookie == WEATHER_HTTP_COOKIE) {
@@ -54,6 +55,10 @@ void success(int32_t cookie, int http_status, DictionaryIterator* received, void
 	}
 }
 
+void reconnect(void* context) {
+	request_weather();
+}
+
 void handle_tick(AppContextRef app_ctx, PebbleTickEvent *event) {
 	time_layer_set_time(&time_layer, *(event->tick_time));
 }
@@ -75,7 +80,7 @@ void handle_init(AppContextRef ctx) {
 	weather_layer_init(&weather_layer, GPoint(0, 100));
 	layer_add_child(&window.layer, &weather_layer.layer);
 	
-	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success}, NULL);
+	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success,.reconnect=reconnect}, (void*)ctx);
 	
 	// Request weather information in a second.
 	app_timer_send_event(ctx, 250, 1);
@@ -95,7 +100,7 @@ void pbl_main(void *params) {
 			.tick_handler = &handle_tick,
 			.tick_units = MINUTE_UNIT
 		},
-		.timer_handler = request_weather,
+		.timer_handler = handle_timer,
 		.messaging_info = {
 			.buffer_sizes = {
 				.inbound = 256,
@@ -106,9 +111,14 @@ void pbl_main(void *params) {
 	app_event_loop(params, &handlers);
 }
 
-void request_weather(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
+void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
+	request_weather();
 	// Update again in fifteen minutes.
-	app_timer_send_event(ctx, 900000, 1);
+	if(cookie)
+		app_timer_send_event(ctx, 900000, 1);
+}
+
+void request_weather() {
 	// Build the HTTP request
 	DictionaryIterator *body;
 	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather.php", WEATHER_HTTP_COOKIE, &body);

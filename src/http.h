@@ -5,6 +5,7 @@
 #define HTTP_STATUS_KEY 0xFFFE
 #define HTTP_SUCCESS_KEY 0xFFFD
 #define HTTP_COOKIE_KEY 0xFFFC
+#define HTTP_CONNECT_KEY 0xFFFB
 
 typedef enum {
 	HTTP_OK 							= 0,
@@ -26,10 +27,12 @@ typedef enum {
 
 typedef void(*HTTPRequestFailedHandler)(int32_t cookie, int http_status, void* context);
 typedef void(*HTTPRequestSucceededHandler)(int32_t cookie, int http_status, DictionaryIterator* sent, void* context);
+typedef void(*HTTPReconnectedHandler)(void* context);
 
 typedef struct {
 	HTTPRequestFailedHandler failure;
 	HTTPRequestSucceededHandler success;
+	HTTPReconnectedHandler reconnect;
 } HTTPCallbacks;
 
 

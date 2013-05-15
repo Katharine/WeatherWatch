@@ -55,16 +55,23 @@ bool http_register_callbacks(HTTPCallbacks callbacks, void* context) {
 
 static void app_send_failed(DictionaryIterator* failed, AppMessageResult reason, void* context) {
 	if(!http_callbacks.failure) return;
-	http_callbacks.failure(0, reason, context);
+	http_callbacks.failure(0, 1000 + reason, context);
 }
 
 static void app_received(DictionaryIterator* received, void* context) {
+	Tuple* connect_tuple = dict_find(received, HTTP_CONNECT_KEY);
+	if(connect_tuple && connect_tuple->value->uint8) {
+		if(http_callbacks.reconnect) {
+			http_callbacks.reconnect(context);
+		}
+		return;
+	}
 	Tuple* success_tuple = dict_find(received, HTTP_SUCCESS_KEY);
 	Tuple* status_tuple = dict_find(received, HTTP_STATUS_KEY);
 	Tuple* cookie_tuple = dict_find(received, HTTP_COOKIE_KEY);
 	if(success_tuple == NULL || status_tuple == NULL || cookie_tuple == NULL) {
 		if(http_callbacks.failure) {
-			http_callbacks.failure(0, HTTP_INVALID_BRIDGE_RESPONSE, context);
+			http_callbacks.failure(0, 1000 + HTTP_INVALID_BRIDGE_RESPONSE, context);
 		}
 		return;
 	}
@@ -83,5 +90,5 @@ static void app_received(DictionaryIterator* received, void* context) {
 
 static void app_dropped(void* context, AppMessageResult reason) {
 	if(!http_callbacks.failure) return;
-	http_callbacks.failure(0, reason, context);
+	http_callbacks.failure(0, 1000 + reason, context);
 }

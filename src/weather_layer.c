@@ -22,6 +22,7 @@ void weather_layer_init(WeatherLayer* weather_layer, GPoint pos) {
 	layer_init(&weather_layer->layer, GRect(pos.x, pos.y, 144, 68));
 	// Add temperature layer
 	text_layer_init(&weather_layer->temp_layer, GRect(70, 9, 64, 68));
+	text_layer_set_text_alignment(&weather_layer->temp_layer, GTextAlignmentCenter);
 	text_layer_set_font(&weather_layer->temp_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_40)));
 	layer_add_child(&weather_layer->layer, &weather_layer->temp_layer.layer);
 	// Note absence of icon layer
