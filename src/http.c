@@ -18,6 +18,14 @@
 #define HTTP_IS_DST_KEY 0xFFF7
 #define HTTP_TZ_NAME_KEY 0xFFF8
 
+#define HTTP_LOCATION_KEY 0xFFE0
+#define HTTP_LATITUDE_KEY 0xFFE1
+#define HTTP_LONGITUDE_KEY 0xFFE2
+#define HTTP_ACCURACY_KEY 0xFFE3
+#define HTTP_SPEED_KEY 0xFFE4
+#define HTTP_BEARING_KEY 0xFFE5
+#define HTTP_ALTITUDE_KEY 0xFFE6
+
 static bool callbacks_registered;
 static AppMessageCallbacksNode app_callbacks;
 static HTTPCallbacks http_callbacks;
@@ -151,6 +159,42 @@ static void app_received_time(uint32_t unixtime, DictionaryIterator *iter) {
 	http_callbacks.time(utc_offset, is_dst, unixtime, tz_name);
 }
 
+struct alias_float {
+	float f;
+} __attribute__((__may_alias__));
+
+// Handy helper for this
+float floatFromUint32(uint32_t value) {
+	return ((struct alias_float*)&value)->f;
+}
+
+static void app_received_location(uint32_t accuracy_int, DictionaryIterator *iter) {
+	if(!http_callbacks.location) return;
+	float accuracy = floatFromUint32(accuracy_int);
+	float latitude = 0.f;
+	float longitude = 0.f;
+	float altitude = 0.f;	
+
+	Tuple* tuple = dict_read_first(iter);
+	if(!tuple) return;
+	do {
+		switch(tuple->key) {
+		case HTTP_LATITUDE_KEY:
+			latitude = floatFromUint32(tuple->value->uint32);
+			break;
+		case HTTP_LONGITUDE_KEY:
+			longitude = floatFromUint32(tuple->value->uint32);
+			break;
+		case HTTP_ALTITUDE_KEY:
+			altitude = floatFromUint32(tuple->value->uint32);
+			break;
+		default:
+			break;
+		}
+	} while((tuple = dict_read_next(iter)));
+	http_callbacks.location(latitude, longitude, altitude, accuracy);	
+}
+
 static void app_received(DictionaryIterator* received, void* context) {
 	// Reconnect message (special: no app id)
 	Tuple* tuple = dict_find(received, HTTP_CONNECT_KEY);
@@ -164,6 +208,12 @@ static void app_received(DictionaryIterator* received, void* context) {
 	tuple = dict_find(received, HTTP_TIME_KEY);
 	if(tuple) {
 		app_received_time(tuple->value->uint32, received);
+		return;
+	}
+	// Location response (special: no app id)
+	tuple = dict_find(received, HTTP_LOCATION_KEY);
+	if(tuple) {
+		app_received_location(tuple->value->uint32, received);
 		return;
 	}
 	// Check for the app id
@@ -223,6 +273,22 @@ HTTPResult http_time_request() {
 		return app_result;
 	}
 	DictionaryResult dict_result = dict_write_uint8(iter, HTTP_TIME_KEY, 1);
+	if(dict_result != DICT_OK) {
+		return dict_result << 12;
+	}
+	app_result = app_message_out_send();
+	app_message_out_release();
+	return app_result;
+}
+
+// Location stuff
+HTTPResult http_location_request() {
+	DictionaryIterator *iter;
+	AppMessageResult app_result = app_message_out_get(&iter);
+	if(app_result != APP_MSG_OK) {
+		return app_result;
+	}
+	DictionaryResult dict_result = dict_write_uint8(iter, HTTP_LOCATION_KEY, 1);
 	if(dict_result != DICT_OK) {
 		return dict_result << 12;
 	}

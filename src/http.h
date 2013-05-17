@@ -34,6 +34,8 @@ typedef void(*HTTPPhoneCookieFsyncHandler)(bool successful, void* context);
 typedef void(*HTTPPhoneCookieDeleteHandler)(int32_t request_id, bool success, void* context);
 // Time callback
 typedef void(*HTTPTimeHandler)(int32_t utc_offset_seconds, bool is_dst, uint32_t unixtime, const char* tz_name);
+// Location callback
+typedef void(*HTTPLocationHandler)(float latitude, float longitude, float altitude, float accuracy);
 
 // HTTP stuff
 typedef struct {
@@ -46,6 +48,7 @@ typedef struct {
 	HTTPPhoneCookieFsyncHandler cookie_fsync;
 	HTTPPhoneCookieDeleteHandler cookie_delete;
 	HTTPTimeHandler time;
+	HTTPLocationHandler location;
 } HTTPCallbacks;
 
 // HTTP requests
@@ -55,6 +58,9 @@ bool http_register_callbacks(HTTPCallbacks callbacks, void* context);
 
 // Time information
 HTTPResult http_time_request();
+
+// Location information
+HTTPResult http_location_request();
 
 // Local cookies
 // Basic API

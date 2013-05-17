@@ -29,6 +29,9 @@ static Window window;
 static TimeLayer time_layer;
 static WeatherLayer weather_layer;
 
+static int our_latitude, our_longitude;
+static bool located;
+
 void request_weather();
 void handle_timer(AppContextRef app_ctx, AppTimerHandle handle, uint32_t cookie);
 
@@ -63,6 +66,14 @@ void handle_tick(AppContextRef app_ctx, PebbleTickEvent *event) {
 	time_layer_set_time(&time_layer, *(event->tick_time));
 }
 
+void location(float latitude, float longitude, float altitude, float accuracy) {
+	// Fix the floats
+	our_latitude = latitude * 10000;
+	our_longitude = longitude * 10000;
+	located = true;
+	request_weather();
+}
+
 void handle_init(AppContextRef ctx) {
 	resource_init_current_app(&APP_RESOURCES);
 	window_init(&window, "Weather Watch");
@@ -80,10 +91,11 @@ void handle_init(AppContextRef ctx) {
 	weather_layer_init(&weather_layer, GPoint(0, 100));
 	layer_add_child(&window.layer, &weather_layer.layer);
 	
-	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success,.reconnect=reconnect}, (void*)ctx);
+	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success,.reconnect=reconnect,.location=location}, (void*)ctx);
 	
 	// Request weather information in a second.
-	app_timer_send_event(ctx, 250, 1);
+	located = false;
+	request_weather();
 }
 
 void handle_deinit(AppContextRef ctx) {
@@ -112,22 +124,27 @@ void pbl_main(void *params) {
 }
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-	request_weather();
+	//request_weather();
+	http_location_request();
 	// Update again in fifteen minutes.
 	if(cookie)
 		app_timer_send_event(ctx, 900000, 1);
 }
 
 void request_weather() {
+	if(!located) {
+		http_location_request();
+		return;
+	}
 	// Build the HTTP request
 	DictionaryIterator *body;
-	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather.php", WEATHER_HTTP_COOKIE, &body);
+	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather2.php", WEATHER_HTTP_COOKIE, &body);
 	if(result != HTTP_OK) {
 		weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
 		return;
 	}
-	dict_write_cstring(body, WEATHER_KEY_LATITUDE, LATITUDE);
-	dict_write_cstring(body, WEATHER_KEY_LONGITUDE, LONGITUDE);
+	dict_write_int32(body, WEATHER_KEY_LATITUDE, our_latitude);
+	dict_write_int32(body, WEATHER_KEY_LONGITUDE, our_longitude);
 	dict_write_cstring(body, WEATHER_KEY_UNIT_SYSTEM, UNIT_SYSTEM);
 	// Send it.
 	if(http_out_send() != HTTP_OK) {
