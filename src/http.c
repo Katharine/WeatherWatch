@@ -32,7 +32,7 @@ static void app_send_failed(DictionaryIterator* failed, AppMessageResult reason,
 static void app_received(DictionaryIterator* received, void* context);
 static void app_dropped(void* context, AppMessageResult reason);
 
-HTTPResult http_out_get(const char* url, bool use_post, int32_t cookie, DictionaryIterator **iter_out) {
+HTTPResult http_out_get(const char* url, int32_t cookie, DictionaryIterator **iter_out) {
 	AppMessageResult app_result = app_message_out_get(iter_out);
 	if(app_result != APP_MSG_OK) {
 		return app_result;
@@ -48,12 +48,6 @@ HTTPResult http_out_get(const char* url, bool use_post, int32_t cookie, Dictiona
 	dict_result = dict_write_int32(*iter_out, HTTP_APP_ID_KEY, our_app_id);
 	if(dict_result != DICT_OK) {
 		return dict_result << 12;
-	}
-	if(!use_post) {
-		dict_result = dict_write_int8(*iter_out, HTTP_USE_GET_KEY, 1);
-		if(dict_result != DICT_OK) {
-			return dict_result << 12;
-		}
 	}
 	return HTTP_OK;
 }

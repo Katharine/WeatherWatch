@@ -52,7 +52,7 @@ typedef struct {
 } HTTPCallbacks;
 
 // HTTP requests
-HTTPResult http_out_get(const char* url, bool use_post, int32_t request_id, DictionaryIterator **iter_out);
+HTTPResult http_out_get(const char* url, int32_t request_id, DictionaryIterator **iter_out);
 HTTPResult http_out_send();
 bool http_register_callbacks(HTTPCallbacks callbacks, void* context);
 
