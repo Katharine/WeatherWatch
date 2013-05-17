@@ -1,12 +1,9 @@
 #ifndef HTTP_H
 #define HTTP_H
 
-#define HTTP_URL_KEY 0xFFFF
-#define HTTP_STATUS_KEY 0xFFFE
-#define HTTP_SUCCESS_KEY 0xFFFD
-#define HTTP_COOKIE_KEY 0xFFFC
-#define HTTP_CONNECT_KEY 0xFFFB
+#define HTTP_UUID { 0x91, 0x41, 0xB6, 0x28, 0xBC, 0x89, 0x49, 0x8E, 0xB1, 0x47, 0x04, 0x9F, 0x49, 0xC0, 0x99, 0xAD }
 
+// Shared values.
 typedef enum {
 	HTTP_OK 							= 0,
 	HTTP_SEND_TIMEOUT 					= APP_MSG_SEND_TIMEOUT,
@@ -25,19 +22,60 @@ typedef enum {
 	HTTP_INVALID_BRIDGE_RESPONSE		= 1 << 17
 } HTTPResult;
 
-typedef void(*HTTPRequestFailedHandler)(int32_t cookie, int http_status, void* context);
-typedef void(*HTTPRequestSucceededHandler)(int32_t cookie, int http_status, DictionaryIterator* sent, void* context);
+// HTTP Request callbacks
+typedef void(*HTTPRequestFailedHandler)(int32_t request_id, int http_status, void* context);
+typedef void(*HTTPRequestSucceededHandler)(int32_t request_id, int http_status, DictionaryIterator* sent, void* context);
 typedef void(*HTTPReconnectedHandler)(void* context);
+// Local cookie callbacks
+typedef void(*HTTPPhoneCookieBatchGetHandler)(int32_t request_id, DictionaryIterator* result, void* context);
+typedef void(*HTTPPhoneCookieGetHandler)(int32_t request_id, Tuple* result, void* context);
+typedef void(*HTTPPhoneCookieSetHandler)(int32_t request_id, bool successful, void* context);
+typedef void(*HTTPPhoneCookieFsyncHandler)(bool successful, void* context);
+typedef void(*HTTPPhoneCookieDeleteHandler)(int32_t request_id, bool success, void* context);
+// Time callback
+typedef void(*HTTPTimeHandler)(int32_t utc_offset_seconds, bool is_dst, uint32_t unixtime, const char* tz_name);
 
+// HTTP stuff
 typedef struct {
 	HTTPRequestFailedHandler failure;
 	HTTPRequestSucceededHandler success;
 	HTTPReconnectedHandler reconnect;
+	HTTPPhoneCookieGetHandler cookie_get;
+	HTTPPhoneCookieBatchGetHandler cookie_batch_get;
+	HTTPPhoneCookieSetHandler cookie_set;
+	HTTPPhoneCookieFsyncHandler cookie_fsync;
+	HTTPPhoneCookieDeleteHandler cookie_delete;
+	HTTPTimeHandler time;
 } HTTPCallbacks;
 
-
-HTTPResult http_out_get(const char* url, int32_t cookie, DictionaryIterator **iter_out);
+// HTTP requests
+HTTPResult http_out_get(const char* url, int32_t request_id, DictionaryIterator **iter_out);
 HTTPResult http_out_send();
 bool http_register_callbacks(HTTPCallbacks callbacks, void* context);
+
+// Time information
+HTTPResult http_time_request();
+
+// Local cookies
+// Basic API
+void http_set_app_id(int32_t id);
+HTTPResult http_cookie_set_start(int32_t request_id, DictionaryIterator **iter_out);
+HTTPResult http_cookie_set_end();
+HTTPResult http_cookie_get_multiple(int32_t request_id, uint32_t* keys, int32_t length);
+HTTPResult http_cookie_delete_multiple(int32_t request_id, uint32_t* keys, int32_t length);
+HTTPResult http_cookie_fsync();
+// Convenience methods
+HTTPResult http_cookie_set_int(uint32_t request_id, uint32_t key, const void* integer, uint8_t width_bytes, bool is_signed);
+HTTPResult http_cookie_set_cstring(uint32_t request_id, uint32_t key, const char* value);
+HTTPResult http_cookie_set_data(uint32_t request_id, uint32_t key, const uint8_t* const value, int length);
+HTTPResult http_cookie_get(uint32_t request_id, uint32_t key);
+HTTPResult http_cookie_delete(uint32_t request_id, uint32_t key);
+// Convenience convenience methods
+HTTPResult http_cookie_set_int32(uint32_t request_id, uint32_t key, int32_t value);
+HTTPResult http_cookie_set_uint32(uint32_t request_id, uint32_t key, uint32_t value);
+HTTPResult http_cookie_set_int16(uint32_t request_id, uint32_t key, int16_t value);
+HTTPResult http_cookie_set_uint16(uint32_t request_id, uint32_t key, uint16_t value);
+HTTPResult http_cookie_set_int8(uint32_t request_id, uint32_t key, int8_t value);
+HTTPResult http_cookie_set_uint8(uint32_t request_id, uint32_t key, uint8_t value);
 
 #endif
