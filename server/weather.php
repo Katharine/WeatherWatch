@@ -1,8 +1,13 @@
 <?php
-define('API_KEY', 'get-your-own'); // http://developer.forecast.io/
+define('API_KEY', 'get-your-own');  // http://developer.forecast.io
 $payload = json_decode(file_get_contents('php://input'), true);
+$payload[1] /= 10000;
+$payload[2] /= 10000;
 $url = "http://api.forecast.io/forecast/" . API_KEY . "/$payload[1],$payload[2]?units=$payload[3]&exclude=minutely,daily,alerts,flags";
-$forecast = json_decode(file_get_contents($url));
+$forecast = json_decode(@file_get_contents($url));
+if(!$forecast) {
+        die();
+}       
 $response = array();
 $icons = array(
         'clear-day' => 0,
@@ -19,4 +24,5 @@ $icons = array(
 $icon_id = $icons[$forecast->currently->icon];
 $response[1] = array('b', $icon_id);
 $response[2] = array('s', round($forecast->currently->temperature));
+header("Cache-Control: max-age=1800");
 print json_encode($response);
