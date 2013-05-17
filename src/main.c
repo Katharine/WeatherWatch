@@ -66,7 +66,7 @@ void handle_tick(AppContextRef app_ctx, PebbleTickEvent *event) {
 	time_layer_set_time(&time_layer, *(event->tick_time));
 }
 
-void location(float latitude, float longitude, float altitude, float accuracy) {
+void location(float latitude, float longitude, float altitude, float accuracy, void* context) {
 	// Fix the floats
 	our_latitude = latitude * 10000;
 	our_longitude = longitude * 10000;
@@ -138,7 +138,7 @@ void request_weather() {
 	}
 	// Build the HTTP request
 	DictionaryIterator *body;
-	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather2.php", WEATHER_HTTP_COOKIE, &body);
+	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather2.php", false, WEATHER_HTTP_COOKIE, &body);
 	if(result != HTTP_OK) {
 		weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
 		return;
