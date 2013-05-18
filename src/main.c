@@ -66,12 +66,17 @@ void handle_tick(AppContextRef app_ctx, PebbleTickEvent *event) {
 	time_layer_set_time(&time_layer, *(event->tick_time));
 }
 
+void set_timer(AppContextRef ctx) {
+	app_timer_send_event(ctx, 1800000, 1);
+}
+
 void location(float latitude, float longitude, float altitude, float accuracy, void* context) {
 	// Fix the floats
 	our_latitude = latitude * 10000;
 	our_longitude = longitude * 10000;
 	located = true;
 	request_weather();
+	set_timer((AppContextRef)context);
 }
 
 void handle_init(AppContextRef ctx) {
@@ -128,7 +133,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 	http_location_request();
 	// Update again in fifteen minutes.
 	if(cookie)
-		app_timer_send_event(ctx, 900000, 1);
+		set_timer(ctx);
 }
 
 void request_weather() {
