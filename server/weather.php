@@ -1,28 +1,68 @@
 <?php
-define('API_KEY', 'get-your-own');  // http://developer.forecast.io
+define('API_KEY', 'get-your-own'); // http://developer.forecast.io/
+
+// Magical scaling function.
+function minute_to_value($minute) {
+    if(!isset($minute->precipIntensity) || $minute->precipIntensity == 0) return 0;
+    $t = $minute->precipIntensity;
+    $t /= 25.4;
+    $t *= (1 - cos($minute->precipProbability * M_PI)) * 0.5;
+    if($t < 0.0019) $t = 0;
+    $t = 4*(1-exp(-2.209389806 * sqrt($t)));
+    if($t <= 1) $t *= 0.15;
+    elseif($t <= 2) $t = 0.15 + ($t-1)*(0.33-0.15);
+    elseif($t <= 3) $t = 0.33 + ($t-2)*0.34;
+    else $t = 0.67 + ($t-3)*(1-0.67);
+    return $t;
+}
+
 $payload = json_decode(file_get_contents('php://input'), true);
+if(!$payload) die();
 $payload[1] /= 10000;
 $payload[2] /= 10000;
-$url = "http://api.forecast.io/forecast/" . API_KEY . "/$payload[1],$payload[2]?units=$payload[3]&exclude=minutely,daily,alerts,flags";
+$url = "http://api.forecast.io/forecast/" . API_KEY . "/$payload[1],$payload[2]?units=$payload[3]&exclude=hourly,daily,alerts,flags";
 $forecast = json_decode(@file_get_contents($url));
 if(!$forecast) {
-        die();
-}       
+    die();
+}
 $response = array();
 $icons = array(
-        'clear-day' => 0,
-        'clear-night' => 1,
-        'rain' => 2,
-        'snow' => 3,
-        'sleet' => 4,
-        'wind' => 5,
-        'fog' => 6,
-        'cloudy' => 7,
-        'partly-cloudy-day' => 8,
-        'partly-cloudy-night' => 9
+    'clear-day' => 0,
+    'clear-night' => 1,
+    'rain' => 2,
+    'snow' => 3,
+    'sleet' => 4,
+    'wind' => 5,
+    'fog' => 6,
+    'cloudy' => 7,
+    'partly-cloudy-day' => 8,
+    'partly-cloudy-night' => 9
 );
 $icon_id = $icons[$forecast->currently->icon];
-$response[1] = array('b', $icon_id);
-$response[2] = array('s', round($forecast->currently->temperature));
-header("Cache-Control: max-age=1800");
+$temp = round($forecast->currently->temperature);
+if($temp < 0) {
+    $temp = -$temp;
+    $temp = $temp | (1 << 10);
+}
+$temp = $temp | ($icon_id << 11);
+$response[1] = array('S', $temp);
+
+$has_precip = false;
+if(isset($forecast->minutely) && $forecast->minutely->data) {
+    $minutes = array();
+    $cap = 0.4;
+    foreach($forecast->minutely->data as $minute) {
+        $value = round(minute_to_value($minute));
+        $minutes[] = round($value * 255);
+        if($value > 0) {
+            $has_precip = true;
+        }
+    }
+    if($has_precip) {
+        $response[3] = array('d', base64_encode(call_user_func_array('pack', array_merge(array('C*'), $minutes))));
+    }
+}
+// Don't cache if it's raining (because that'd screw up the graph)
+if(!$has_precip)
+    header("Cache-Control: max-age=1800");
 print json_encode($response);
