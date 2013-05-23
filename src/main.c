@@ -129,8 +129,7 @@ void pbl_main(void *params) {
 }
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-	//request_weather();
-	http_location_request();
+	request_weather();
 	// Update again in fifteen minutes.
 	if(cookie)
 		set_timer(ctx);
