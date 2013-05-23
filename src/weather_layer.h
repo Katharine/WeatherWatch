@@ -1,13 +1,7 @@
 #ifndef WEATHER_LAYER_H
 #define WEATHER_LAYER_H
 
-typedef struct {
-	Layer layer;
-	BmpContainer icon_layer;
-	TextLayer temp_layer;
-	bool has_weather_icon;
-	char temp_str[5];
-} WeatherLayer;
+#include "graph_layer.h"
 
 typedef enum {
 	WEATHER_ICON_CLEAR_DAY = 0,
@@ -24,9 +18,24 @@ typedef enum {
 	WEATHER_ICON_COUNT
 } WeatherIcon;
 
+typedef struct {
+	Layer layer;
+	BmpContainer icon_layer;
+	TextLayer temp_layer;
+	GraphLayer graph_layer;
+	uint8_t* forecast;
+	uint8_t forecast_count;
+	bool has_forecast;
+	bool has_weather_icon;
+	WeatherIcon current_icon;
+	char temp_str[5];
+} WeatherLayer;
+
 void weather_layer_init(WeatherLayer* weather_layer, GPoint pos);
 void weather_layer_deinit(WeatherLayer* weather_layer);
 void weather_layer_set_icon(WeatherLayer* weather_layer, WeatherIcon icon);
 void weather_layer_set_temperature(WeatherLayer* weather_layer, int16_t temperature);
+void weather_layer_set_precipitation_forecast(WeatherLayer* weather_layer, uint8_t* forecast, uint8_t length);
+void weather_layer_clear_precipitation_forecast(WeatherLayer* weather_layer);
 
 #endif

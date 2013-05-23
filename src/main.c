@@ -20,8 +20,8 @@ PBL_APP_INFO(MY_UUID,
 #define WEATHER_KEY_LONGITUDE 2
 #define WEATHER_KEY_UNIT_SYSTEM 3
 // Received variables
-#define WEATHER_KEY_ICON 1
-#define WEATHER_KEY_TEMPERATURE 2
+#define WEATHER_KEY_CURRENT 1
+#define WEATHER_KEY_PRECIPITATION 3
 
 #define WEATHER_HTTP_COOKIE 1949327671
 
@@ -31,6 +31,9 @@ static WeatherLayer weather_layer;
 
 static int our_latitude, our_longitude;
 static bool located;
+
+static uint8_t precip_forecast[60];
+static int8_t precip_forecast_index;
 
 void request_weather();
 void handle_timer(AppContextRef app_ctx, AppTimerHandle handle, uint32_t cookie);
@@ -43,18 +46,29 @@ void failed(int32_t cookie, int http_status, void* context) {
 
 void success(int32_t cookie, int http_status, DictionaryIterator* received, void* context) {
 	if(cookie != WEATHER_HTTP_COOKIE) return;
-	Tuple* icon_tuple = dict_find(received, WEATHER_KEY_ICON);
-	if(icon_tuple) {
-		int icon = icon_tuple->value->int8;
-		if(icon >= 0 && icon < 10) {
+	Tuple* data_tuple = dict_find(received, WEATHER_KEY_CURRENT);
+	if(data_tuple) {
+		// The below bitwise dance is so we can actually fit our precipitation forecast.
+		uint16_t value = data_tuple->value->int16;
+		uint8_t icon = value >> 11;
+		if(icon < 10) {
 			weather_layer_set_icon(&weather_layer, icon);
 		} else {
 			weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
 		}
+		int16_t temp = value & 0x3ff;
+		if(value & 0x400) temp = -temp;
+		weather_layer_set_temperature(&weather_layer, temp);
 	}
-	Tuple* temperature_tuple = dict_find(received, WEATHER_KEY_TEMPERATURE);
-	if(temperature_tuple) {
-		weather_layer_set_temperature(&weather_layer, temperature_tuple->value->int16);
+	Tuple* forecast_tuple = dict_find(received, WEATHER_KEY_PRECIPITATION);
+	if(forecast_tuple) {
+		// It's going to rain!
+		memset(precip_forecast, 0, 60);
+		memcpy(precip_forecast, forecast_tuple->value->data, forecast_tuple->length > 60 ? 60 : forecast_tuple->length);
+		precip_forecast_index = 0;
+		weather_layer_set_precipitation_forecast(&weather_layer, precip_forecast, 60);
+	} else {
+		weather_layer_clear_precipitation_forecast(&weather_layer);
 	}
 }
 
@@ -64,10 +78,19 @@ void reconnect(void* context) {
 
 void handle_tick(AppContextRef app_ctx, PebbleTickEvent *event) {
 	time_layer_set_time(&time_layer, *(event->tick_time));
+	if(precip_forecast_index >= 0) {
+		++precip_forecast_index;
+		if(precip_forecast_index > 60) {
+			weather_layer_clear_precipitation_forecast(&weather_layer);
+			precip_forecast_index = -1;
+		} else {
+			weather_layer_set_precipitation_forecast(&weather_layer, &precip_forecast[precip_forecast_index], 60 - precip_forecast_index);
+		}
+	}
 }
 
 void set_timer(AppContextRef ctx) {
-	app_timer_send_event(ctx, 1800000, 1);
+	app_timer_send_event(ctx, 1740000, 1);
 }
 
 void location(float latitude, float longitude, float altitude, float accuracy, void* context) {
@@ -96,9 +119,15 @@ void handle_init(AppContextRef ctx) {
 	weather_layer_init(&weather_layer, GPoint(0, 100));
 	layer_add_child(&window.layer, &weather_layer.layer);
 	
-	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success,.reconnect=reconnect,.location=location}, (void*)ctx);
+	http_register_callbacks((HTTPCallbacks){
+		.failure=failed,
+		.success=success,
+		.reconnect=reconnect,
+		.location=location
+	}, (void*)ctx);
 	
-	// Request weather information in a second.
+	// Request weather
+	precip_forecast_index = -1;
 	located = false;
 	request_weather();
 }
@@ -142,7 +171,7 @@ void request_weather() {
 	}
 	// Build the HTTP request
 	DictionaryIterator *body;
-	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather2.php", WEATHER_HTTP_COOKIE, &body);
+	HTTPResult result = http_out_get("http://pwdb.kathar.in/pebble/weather3.php", WEATHER_HTTP_COOKIE, &body);
 	if(result != HTTP_OK) {
 		weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
 		return;
