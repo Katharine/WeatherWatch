@@ -64,5 +64,5 @@ if(isset($forecast->minutely) && $forecast->minutely->data) {
 }
 // Don't cache if it's raining (because that'd screw up the graph)
 if(!$has_precip)
-    header("Cache-Control: max-age=1800");
+    header("Cache-Control: max-age=1680");
 print json_encode($response);
