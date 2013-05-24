@@ -95,7 +95,8 @@ void weather_layer_set_precipitation_forecast(WeatherLayer* weather_layer, uint8
 void weather_layer_clear_precipitation_forecast(WeatherLayer* weather_layer) {
 	if(weather_layer->has_forecast) {
 		weather_layer->forecast = NULL;
-		weather_layer->forecast_count = 0;
+		weather_layer->forecast_count = -1;
+		weather_layer->has_forecast = false;
 		layer_remove_from_parent(&weather_layer->graph_layer.layer);
 		graph_layer_set_data(&weather_layer->graph_layer, NULL, 0);
 		weather_layer_set_icon(weather_layer, weather_layer->current_icon);
