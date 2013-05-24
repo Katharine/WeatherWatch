@@ -36,8 +36,10 @@ void weather_layer_init(WeatherLayer* weather_layer, GPoint pos) {
 	graph_layer_set_graph_colour(&weather_layer->graph_layer, GColorBlack);
 	graph_layer_set_tick_colour(&weather_layer->graph_layer, GColorBlack);
 	graph_layer_set_background_colour(&weather_layer->graph_layer, GColorWhite);
-	static uint8_t ticks[2] = {85, 171};
-	graph_layer_set_vertical_ticks(&weather_layer->graph_layer, ticks, ARRAY_LENGTH(ticks));
+	static uint8_t vticks[2] = {85, 171};
+	graph_layer_set_vertical_ticks(&weather_layer->graph_layer, vticks, ARRAY_LENGTH(vticks));
+	static uint8_t hticks[2] = {10, 20};
+	graph_layer_set_horizontal_ticks(&weather_layer->graph_layer, hticks, ARRAY_LENGTH(hticks));
 }
 
 void weather_layer_set_icon(WeatherLayer* weather_layer, WeatherIcon icon) {

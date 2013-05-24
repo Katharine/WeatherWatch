@@ -53,6 +53,12 @@ void graph_layer_set_vertical_ticks(GraphLayer* graph_layer, uint8_t* ticks, uin
 	layer_mark_dirty(&graph_layer->layer);
 }
 
+void graph_layer_set_horizontal_ticks(GraphLayer* graph_layer, uint8_t* ticks, uint8_t length) {
+	graph_layer->h_ticks = ticks;
+	graph_layer->h_tick_count = length;
+	layer_mark_dirty(&graph_layer->layer);
+}
+
 void graph_layer_set_background_colour(GraphLayer* graph_layer, GColor background_colour) {
 	graph_layer->background_colour = background_colour;
 	layer_mark_dirty(&graph_layer->layer);
@@ -95,9 +101,9 @@ static void graph_layer_draw(Layer* layer, GContext* ctx) {
 		}
 	}
 	// Draw the ticks
+	graphics_context_set_fill_color(ctx, graph_layer->tick_colour);
+	graphics_context_set_stroke_color(ctx, graph_layer->tick_colour);
 	if(graph_layer->v_ticks && graph_layer->v_tick_count && graph_layer->tick_colour != GColorClear) {
-		graphics_context_set_fill_color(ctx, graph_layer->tick_colour);
-		graphics_context_set_stroke_color(ctx, graph_layer->tick_colour);
 		for(uint8_t i = 0; i < graph_layer->v_tick_count; ++i) {
 			uint8_t tick = graph_layer->v_ticks[i];
 			uint8_t height = (tick * frame.size.h) / graph_layer->max_value;
@@ -105,6 +111,17 @@ static void graph_layer_draw(Layer* layer, GContext* ctx) {
 			for(uint8_t j = 0; j < frame.size.w; j += 2) {
 				// For some reason drawing pixels did nothing, but drawing length-one lines works.
 				graphics_draw_line(ctx, GPoint(j, frame.size.h - height), GPoint(j, frame.size.h - height));
+			}
+		}
+	}
+	if(graph_layer->h_ticks && graph_layer->h_tick_count && graph_layer->tick_colour != GColorClear) {
+		for(uint8_t i = 0; i < graph_layer->h_tick_count; ++i) {
+			uint8_t tick = graph_layer->h_ticks[i];
+			uint8_t x = tick * graph_layer->point_width;
+			// Draw a dashed line.
+			for(uint8_t j = 0; j < frame.size.h; j += 2) {
+				// For some reason drawing pixels did nothing, but drawing length-one lines works.
+				graphics_draw_line(ctx, GPoint(x, j), GPoint(x, j));
 			}
 		}
 	}
