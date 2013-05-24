@@ -149,7 +149,7 @@ void pbl_main(void *params) {
 		.timer_handler = handle_timer,
 		.messaging_info = {
 			.buffer_sizes = {
-				.inbound = 256,
+				.inbound = 124,
 				.outbound = 256,
 			}
 		}
