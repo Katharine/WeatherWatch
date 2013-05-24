@@ -1,21 +1,6 @@
 #include "pebble_os.h"
 #include "graph_layer.h"
 
-/*
-typedef struct {
-	Layer layer;
-	uint8_t max_value;
-	uint8_t point_width;
-	uint8_t* data;
-	uint8_t data_count;
-	GColor axis_colour;
-	GColor graph_colour;
-	GColor tick_colour;
-	uint8_t* v_ticks;
-	uint8_t v_tick_count;
-} GraphLayer;
-*/
-
 static void graph_layer_draw(Layer* layer, GContext* ctx);
 
 void graph_layer_init(GraphLayer* graph_layer, GRect frame) {

@@ -88,6 +88,8 @@ void weather_layer_set_precipitation_forecast(WeatherLayer* weather_layer, uint8
 		graph_layer_set_data(&weather_layer->graph_layer, forecast, length);
 		layer_add_child(&weather_layer->layer, &weather_layer->graph_layer.layer);
 		weather_layer->has_forecast = true;
+	} else {
+		weather_layer_clear_precipitation_forecast(weather_layer);
 	}
 }
 void weather_layer_clear_precipitation_forecast(WeatherLayer* weather_layer) {
