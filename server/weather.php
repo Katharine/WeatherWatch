@@ -1,13 +1,10 @@
 <?php
-define('API_KEY', 'get-your-own'); // http://developer.forecast.io/
-
 // Magical scaling function.
-function minute_to_value($minute) {
+function minute_to_value($minute, $units)  {
     if(!isset($minute->precipIntensity) || $minute->precipIntensity == 0) return 0;
     $t = $minute->precipIntensity;
-    $t /= 25.4;
+    if($units != "us") $t /= 25.4;
     $t *= (1 - cos($minute->precipProbability * M_PI)) * 0.5;
-    if($t < 0.0019) $t = 0;
     $t = 4*(1-exp(-2.209389806 * sqrt($t)));
     if($t <= 1) $t *= 0.15;
     elseif($t <= 2) $t = 0.15 + ($t-1)*(0.33-0.15);
@@ -16,11 +13,12 @@ function minute_to_value($minute) {
     return $t;
 }
 
+define('API_KEY', '52c488b6e9f22a19b2ec31c083b62f46');
 $payload = json_decode(file_get_contents('php://input'), true);
 if(!$payload) die();
 $payload[1] /= 10000;
 $payload[2] /= 10000;
-$url = "http://api.forecast.io/forecast/" . API_KEY . "/$payload[1],$payload[2]?units=$payload[3]&exclude=hourly,daily,alerts,flags";
+$url = "http://api.forecast.io/forecast/" . API_KEY . "/$payload[1],$payload[2]?units=$payload[3]&exclude=hourly,daily,alerts";
 $forecast = json_decode(@file_get_contents($url));
 if(!$forecast) {
     die();
@@ -52,7 +50,7 @@ if(isset($forecast->minutely) && $forecast->minutely->data) {
     $minutes = array();
     $cap = 0.4;
     foreach($forecast->minutely->data as $minute) {
-        $value = round(minute_to_value($minute));
+        $value = minute_to_value($minute, $forecast->flags->units);
         $minutes[] = round($value * 255);
         if($value > 0) {
             $has_precip = true;
